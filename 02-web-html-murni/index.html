@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Plant GUI Dashboard (Paket 3)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="header">
+    <div class="header-left">
+      <h1>🌱 SMART PLANT MONITORING — WEB DASHBOARD</h1>
+      <p class="subtitle">WMLTA 3 D4 ED PENS | Rassya Aditia (2124600097) • Enzilana Afwa (2124600092) • Adrian Indra P. (2124600110)</p>
+    </div>
+    <div class="header-right">
+      <div id="connPill" class="pill disconnected">● TERPUTUS</div>
+      <div id="alarmBanner" class="pill normal">SISTEM NORMAL</div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Sidebar Kontrol & Konfigurasi -->
+    <aside class="sidebar">
+      <!-- Panel Komunikasi -->
+      <section class="card panel-box">
+        <h3>⚙️ Konfigurasi Komunikasi</h3>
+        <div class="form-group">
+          <label for="sourceMode">Sumber Data:</label>
+          <select id="sourceMode">
+            <option value="sim">Mode Simulasi (Demo Offline)</option>
+            <option value="esp32">ESP32 WiFi TCP (192.168.4.1)</option>
+          </select>
+        </div>
+        <div class="form-row" id="tcpConfigRow">
+          <div class="form-group flex-2">
+            <label for="espHost">IP ESP32:</label>
+            <input type="text" id="espHost" value="192.168.4.1">
+          </div>
+          <div class="form-group flex-1">
+            <label for="espPort">Port:</label>
+            <input type="number" id="espPort" value="5000">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ahtMode">Mode AHT10:</label>
+            <select id="ahtMode">
+              <option value="fast">fast (~85ms)</option>
+              <option value="recommended">recommended (~2s)</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="targetPackets">Target Pkt:</label>
+            <select id="targetPackets">
+              <option value="0">0 (Kontinu)</option>
+              <option value="10">10 paket</option>
+              <option value="20">20 paket</option>
+              <option value="50">50 paket</option>
+              <option value="100">100 paket</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="simIntervalGroup">
+          <label for="simInterval">Interval Uji (Simulasi):</label>
+          <select id="simInterval">
+            <option value="85">85 ms (Uji 3: Cepat)</option>
+            <option value="500">500 ms (Uji 2: Sedang)</option>
+            <option value="2000">2000 ms (Uji 1: Lambat)</option>
+          </select>
+        </div>
+        <div class="btn-group">
+          <button id="btnStart" class="btn btn-primary">▶ HUBUNGKAN & STREAM</button>
+          <button id="btnStop" class="btn btn-danger" disabled>⏹ STOP</button>
+        </div>
+      </section>
+
+      <!-- Panel Ambang Batas Alarm -->
+      <section class="card panel-box">
+        <h3>🔔 Ambang Batas Alarm</h3>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="threshTemp">Suhu Max (°C):</label>
+            <input type="number" id="threshTemp" value="32.0" step="0.5">
+          </div>
+          <div class="form-group flex-1">
+            <label for="threshHum">RH Min (%):</label>
+            <input type="number" id="threshHum" value="40.0" step="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="threshDist">Jarak Min (cm):</label>
+            <input type="number" id="threshDist" value="15.0" step="1">
+          </div>
+          <div class="form-group flex-1">
+            <label for="threshSoil">Soil Min (%):</label>
+            <input type="number" id="threshSoil" value="20.0" step="1">
+          </div>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="audioAlarm" checked> Aktifkan Audio Beep Alarm
+        </label>
+      </section>
+
+      <!-- Panel Metrik Kinerja (Slide 6) -->
+      <section class="card panel-box">
+        <h3>⚡ Metrik Kinerja (Slide 6)</h3>
+        <div class="metric-row"><span>Data Diterima:</span><strong id="mRec">0 baris</strong></div>
+        <div class="metric-row"><span>Gagal Parsing:</span><strong id="mFail" class="text-green">0 baris</strong></div>
+        <div class="metric-row"><span>Interval Update:</span><strong id="mIntv">-- ms</strong></div>
+        <div class="metric-row"><span>RTT Rata-rata:</span><strong id="mRtt">-- ms</strong></div>
+        <div class="metric-row"><span>Respons Render UI:</span><strong id="mUi">-- ms</strong></div>
+
+        <div class="btn-group-col">
+          <button id="btnSlide6" class="btn btn-accent">📋 LIHAT TABEL HASIL UJI (SLIDE 6)</button>
+          <button id="btnExportCsv" class="btn btn-outline">💾 UNDUH LOG CSV</button>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Konten Visualisasi Utama -->
+    <section class="content-area">
+      <!-- 4 KPI Sensor Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card card-temp" id="cardTemp">
+          <div class="kpi-title">🌡️ SUHU UDARA (AHT10)</div>
+          <div class="kpi-val" id="valTemp">-- °C</div>
+          <div class="kpi-status" id="statTemp">Status: idle | Ambang: &lt; 32.0°C</div>
+        </div>
+        <div class="kpi-card card-hum" id="cardHum">
+          <div class="kpi-title">💧 KELEMBAPAN UDARA (AHT10)</div>
+          <div class="kpi-val" id="valHum">-- %RH</div>
+          <div class="kpi-status" id="statHum">Status: idle | Ambang: &gt; 40.0%</div>
+        </div>
+        <div class="kpi-card card-soil" id="cardSoil">
+          <div class="kpi-title">🌱 KELEMBAPAN TANAH (Capacitive)</div>
+          <div class="kpi-val" id="valSoil">-- %</div>
+          <div class="kpi-status" id="statSoil">ADC: -- | Status: idle</div>
+        </div>
+        <div class="kpi-card card-dist" id="cardDist">
+          <div class="kpi-title">📏 JARAK OBJEK (HC-SR04)</div>
+          <div class="kpi-val" id="valDist">-- cm</div>
+          <div class="kpi-status" id="statDist">Status: idle | Ambang: &gt; 15.0 cm</div>
+        </div>
+      </div>
+
+      <!-- 3 Real-time Canvas Charts -->
+      <div class="charts-container card">
+        <div class="chart-box">
+          <div class="chart-header">
+            <h4>Suhu Lingkungan (°C) vs Ambang Batas</h4>
+            <span class="legend-badge badge-temp">Suhu (°C)</span>
+            <span class="legend-badge badge-thresh">Ambang Max</span>
+          </div>
+          <canvas id="chartTemp" height="110"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-header">
+            <h4>Kelembapan Udara (%RH) & Tanah (%)</h4>
+            <span class="legend-badge badge-hum">RH Udara (%)</span>
+            <span class="legend-badge badge-soil">Soil (%)</span>
+          </div>
+          <canvas id="chartHum" height="110"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-header">
+            <h4>Jarak Objek Ultrasonik (cm)</h4>
+            <span class="legend-badge badge-dist">Jarak (cm)</span>
+            <span class="legend-badge badge-thresh">Ambang Min</span>
+          </div>
+          <canvas id="chartDist" height="110"></canvas>
+        </div>
+      </div>
+
+      <!-- Live Packet Logs Table -->
+      <div class="table-container card">
+        <div class="table-header">
+          <h4>📜 Riwayat Data Masuk (Live Packet Logs)</h4>
+          <span class="table-badge" id="packetCountBadge">0 Paket</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="logsTable">
+            <thead>
+              <tr>
+                <th>#Seq</th>
+                <th>Waktu</th>
+                <th>Suhu (°C)</th>
+                <th>RH (%)</th>
+                <th>Soil ADC</th>
+                <th>Soil (%)</th>
+                <th>Jarak (cm)</th>
+                <th>RTT (ms)</th>
+                <th>Interval (ms)</th>
+                <th>Status Alarm</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <tr>
+                <td colspan="10" class="text-center text-muted">Belum ada data masuk. Klik "HUBUNGKAN & STREAM" untuk memulai.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Status Bar Bawah -->
+  <footer class="footer-status">
+    <span id="footerInfo">Siap menghubungkan ke ESP32 atau jalankan Mode Simulasi.</span>
+    <span id="footerTime">--:--:--</span>
+  </footer>
+
+  <!-- Modal Rekapitulasi Slide 6 -->
+  <div id="slide6Modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📊 TABEL HASIL PENGUJIAN GUI (SESUAI SLIDE 6 PPT)</h3>
+        <button id="modalCloseBtn" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Nilai parameter di bawah ini dihitung langsung dari data pengujian yang baru saja dijalankan:</p>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Parameter Slide 6</th>
+              <th>Hasil Pengujian Saat Ini</th>
+              <th>Keterangan / Standar Acuan</th>
+            </tr>
+          </thead>
+          <tbody id="slide6TableBody">
+            <!-- Diisi dinamis oleh JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button id="btnCopySlide6" class="btn btn-success">📋 Salin Nilai ke Clipboard (Tabel)</button>
+        <button id="modalCloseBtn2" class="btn btn-outline">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
