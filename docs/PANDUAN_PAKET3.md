@@ -68,9 +68,9 @@ Berikut adalah panduan lengkap untuk mengisi file **`Paket 3 - GUI Monitoring.pp
 
 | Aspek Pertanyaan | Keputusan Perancangan GUI |
 |---|---|
-| **Data sensor apa yang ditampilkan?** | 1. Suhu Udara: Satuan derajat Celsius (°C), resolusi 0.1 °C.<br>2. Kelembapan Udara: Satuan persentase relatif (%RH), resolusi 0.1 %.<br>3. Kelembapan Tanah: Nilai ADC mentah (0–4095) dan persentase kalibrasi (%).<br>4. Jarak Objek: Satuan sentimeter (cm), resolusi 0.1 cm. |
+| **Data sensor apa yang ditampilkan?** | 1. Suhu Udara: Satuan derajat Celsius (°C), resolusi 0.1 °C.<br>2. Kelembapan Udara: Satuan persentase relatif (%RH), resolusi 0.1 %.<br>3. Kelembapan Tanah: Nilai ADC mentah (0–4095) dan perkiraan persentase (%) — sensor belum dikalibrasi.<br>4. Jarak Sensor ke Pucuk Tanaman (HC-SR04): Satuan sentimeter (cm), resolusi 0.1 cm, dipakai untuk menghitung tinggi tanaman $H_{\text{tanaman}} = H_{\text{ref}} - d$. |
 | **Bentuk tampilan data?** | Kombinasi terpadu:<br>1. *KPI Metric Cards*: Angka besar dan status warna real-time.<br>2. *Grafik Time-Series*: 3 subplot Matplotlib dengan rolling window 50 sampel.<br>3. *Tabel Riwayat Live*: Menampilkan 40 baris paket data terakhir lengkap dengan timestamp. |
-| **Kapan status berubah / alarm aktif?** | Alarm dipicu seketika saat parameter melewati ambang batas yang dapat dikonfigurasi:<br>• Suhu Udara > 32.0 °C (Kondisi panas berlebih).<br>• Kelembapan Udara < 40.0 % (Kondisi kering).<br>• Kelembapan Tanah < 20.0 % (Tanaman butuh penyiraman).<br>• Jarak Objek < 15.0 cm (Objek terlalu dekat / halangan tangki air). |
+| **Kapan status berubah / alarm aktif?** | Alarm dipicu seketika saat parameter melewati ambang batas yang dapat dikonfigurasi:<br>• Suhu Udara > 32.0 °C (Kondisi panas berlebih).<br>• Kelembapan Udara < 40.0 % (Kondisi kering).<br>• Kelembapan Tanah < 20.0 % (Tanaman butuh penyiraman).<br>• Jarak Sensor ke Pucuk < 15.0 cm (Tanaman sudah tumbuh mendekati sensor). |
 | **Pilihan koneksi?** | Nirkabel Wi-Fi TCP (ESP32 bertindak sebagai SoftAP pada `192.168.4.1` port `5000`), dilengkapi opsi Mode Simulasi Sintetis untuk pengujian mandiri. |
 | **Platform yang dipilih?** | Python (Tkinter + Matplotlib). Dipilih karena bersifat *cross-platform*, ringan, tidak memerlukan lisensi berbayar, dan memiliki ekosistem visualisasi data ilmiah yang sangat kaya. |
 
@@ -121,19 +121,18 @@ Berikut adalah panduan lengkap untuk mengisi file **`Paket 3 - GUI Monitoring.pp
 
 ### 📌 Slide 6: Hasil Pengujian GUI (Tabel Utama)
 
-Berikut adalah rekapitulasi data hasil pengujian aktual untuk ketiga variasi skenario:
+Berikut adalah rekapitulasi hasil pengujian mode simulasi (angka sesuai berkas CSV di `logs/` dan Bab IV laporan):
 
-| Parameter Pengujian | Uji 1 (Interval Lambat) | Uji 2 (Interval Sedang) | Uji 3 (Interval Cepat) |
+| Parameter Pengujian | Uji 1: Lambat (~2000 ms, skrip) | Uji 2: Sedang (~500 ms, GUI + alarm) | Uji 3: Cepat (~85 ms, GUI normal) |
 |---|:---:|:---:|:---:|
-| **Konfigurasi / Skenario** | Mode AHT Recommended (~2000 ms) | Interval Sedang (~500 ms) | Mode AHT Fast (~85 ms) |
-| **Interval pembaruan (ms)** | **2004.2 ms** | **498.7 ms** | **85.1 ms** |
-| **Data diterima (baris)** | **50 baris** | **100 baris** | **250 baris** |
-| **Data gagal parsing (baris)** | **0 baris** | **0 baris** | **0 baris** |
-| **Respons tampilan UI (ms)** | **8.45 ms** | **9.12 ms** | **11.35 ms** |
-| **Grafik diperbarui** | **Ya** (Lancar, interval 2 detik) | **Ya** (Lancar & responsif) | **Ya** (Sangat mulus tanpa lag) |
-| **Alarm sesuai ambang** | **Ya** (Terdeteksi saat Suhu > 32°C) | **Ya** (Sesuai ambang) | **Ya** (Deteksi instan dalam 85ms) |
-| **Logging tersimpan** | **Ya** (`log_gui_..._lambat.csv`) | **Ya** (`log_gui_..._sedang.csv`) | **Ya** (`log_gui_..._cepat.csv`) |
-| **Apakah GUI stabil lama?** | **Ya** (Stabil 100%, memori rata) | **Ya** (Stabil tanpa kendala) | **Ya** (Stabil, antrean thread aman) |
+| **Interval pembaruan rata-rata (ms)** | **2007,75** | **504,71** | **85,50** |
+| **Data diterima (baris)** | **10** | **20** | **20** |
+| **Data gagal parsing (baris)** | **0** | **0** | **0** |
+| **Respons tampilan UI rata-rata (ms)** | Tidak diukur di jendela (skrip tanpa GUI) | **33,03** (1,09–3,97 ms tanpa beep; 95,42–109,09 ms saat beep 80 ms) | **1,73** (rentang 0,85–3,96) |
+| **Grafik diperbarui** | Tidak diuji (tanpa jendela) | **Ya, tiap paket** | **Ya, tiap paket** |
+| **Alarm sesuai ambang** | **Ya** (5/10 baris, suhu > 32 °C) | **Ya** (20/20 baris, suhu > 27 °C) | **Ya** (0/20 baris, suhu < 37 °C) |
+| **Logging tersimpan** | **Ya** (`log_gui_uji1_lambat_20261109_125143.csv`) | **Ya** (`log_gui_simulasi_20261109_124459.csv`) | **Ya** (`log_gui_simulasi_20261109_124355.csv`) |
+| **Stabil selama pengujian** | **Ya** (10 paket, ~20 detik) | **Ya** (20 paket, ~10 detik) | **Ya** (20 paket, ~1,7 detik) |
 
 > 💡 **Catatan untuk Ujian**: Anda juga dapat menekan tombol **"📋 LIHAT TABEL HASIL UJI (SLIDE 6)"** di dalam GUI untuk mengkopi angka pengujian yang baru saja dijalankan secara langsung!
 
