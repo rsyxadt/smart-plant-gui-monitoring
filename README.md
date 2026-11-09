@@ -118,19 +118,20 @@ segera setelah frame diterima agar mikrokontroler dapat mengukur nilai Round-Tri
 
 ---
 
-## 📈 Rekapitulasi Hasil Pengujian (Sesuai Slide 6 PPT)
+## 📈 Rekapitulasi Hasil Pengujian GUI Python (Format Slide 6 PPT)
 
-| Parameter Pengujian | Uji 1 (Interval Lambat) | Uji 2 (Interval Sedang) | Uji 3 (Interval Cepat) |
+Hasil pengujian mode simulasi pada Model 1 (`01-desktop-tkinter/gui_monitor.py`):
+
+| Parameter Pengujian | Uji 1: Lambat (~2000 ms, skrip) | Uji 2: Sedang (~500 ms, GUI + alarm) | Uji 3: Cepat (~85 ms, GUI normal) |
 |---|:---:|:---:|:---:|
-| **Konfigurasi Mode Sensor** | AHT10 Recommended (~2000 ms) | Interval Sedang (~500 ms) | AHT10 Fast (~85 ms) |
-| **Interval Pembaruan Rata-rata** | **2.014,8 ms** | **501,8 ms** | **85,7 ms** |
-| **Data Berhasil Diterima** | **50 baris** | **100 baris** | **250 baris** |
-| **Data Gagal Parsing** | **0 baris (0,0%)** | **0 baris (0,0%)** | **0 baris (0,0%)** |
-| **Respons Latensi Tampilan UI** | **8,21 ms** (Tkinter) / **1,45 ms** (Canvas) | **8,21 ms** / **1,62 ms** | **8,21 ms** / **1,85 ms** |
-| **Pembaruan Grafik Real-Time** | Ya (Mulus tanpa jeda) | Ya (Lancar responsif) | Ya (Mulus real-time) |
-| **Kepatuhan Ambang Alarm** | Ya (Terdeteksi saat Suhu > 32°C)| Ya (Sesuai ambang) | Ya (Deteksi instan) |
-| **Pencatatan Log CSV** | Ya (Tersimpan otomatis di `logs/`)| Ya (Tersimpan otomatis) | Ya (Tersimpan otomatis) |
-| **Kestabilan Jangka Panjang** | Ya (100% stabil, tanpa crash) | Ya (100% stabil) | Ya (100% stabil) |
+| **Interval Pembaruan Rata-rata (ms)** | **2007,75** | **504,71** | **85,50** |
+| **Data Diterima (baris)** | **10** | **20** | **20** |
+| **Data Gagal Parsing (baris)** | **0** | **0** | **0** |
+| **Respons Tampilan UI Rata-rata (ms)** | Tidak diukur di jendela (skrip tanpa GUI) | **33,03** (1,09–3,97 ms tanpa beep; 95,42–109,09 ms saat beep 80 ms) | **1,73** (rentang 0,85–3,96) |
+| **Grafik Diperbarui** | Tidak diuji (tanpa jendela) | Ya, tiap paket | Ya, tiap paket |
+| **Alarm Sesuai Ambang** | Ya (5/10 baris, suhu > 32 °C) | Ya (20/20 baris, suhu > 27 °C) | Ya (0/20 baris, suhu < 37 °C) |
+| **Logging Tersimpan** | Ya (`log_gui_uji1_lambat_20261109_125143.csv`) | Ya (`log_gui_simulasi_20261109_124459.csv`) | Ya (`log_gui_simulasi_20261109_124355.csv`) |
+| **Stabil Selama Pengujian** | Ya (10 paket, ~20 detik) | Ya (20 paket, ~10 detik) | Ya (20 paket, ~1,7 detik) |
 
 ---
 
