@@ -74,7 +74,9 @@ def run_batch_test(label, interval_ms, num_packets, aht_mode):
                         alarm_count += 1
                     
                     t_ui1 = time.perf_counter()
-                    ui_lat = (t_ui1 - t_ui0) * 1000.0 + 8.2  # Simulasi rendering time Matplotlib ~8-11ms
+                    # Skrip ini berjalan tanpa jendela Tkinter, sehingga yang terukur di sini
+                    # hanya waktu pemrosesan pesan di memori (bukan waktu penggambaran GUI).
+                    ui_lat = (t_ui1 - t_ui0) * 1000.0
                     ui_latencies.append(ui_lat)
                     
                     # Tulis ke CSV
@@ -88,7 +90,7 @@ def run_batch_test(label, interval_ms, num_packets, aht_mode):
                         'send_start_us': msg.get('send_start_us'),
                         'packet_interval_ms': intv,
                         'packet_bytes': raw_bytes,
-                        'ui_latency_ms': round(ui_lat, 2),
+                        'ui_latency_ms': None,
                         'alarm_active': alarm,
                         'alarm_reasons': "Suhu > 32.0C" if alarm else ""
                     }
@@ -104,12 +106,12 @@ def run_batch_test(label, interval_ms, num_packets, aht_mode):
     engine.join(timeout=1.0)
     
     mean_intv = sum(intervals) / len(intervals) if intervals else interval_ms
-    mean_ui = sum(ui_latencies) / len(ui_latencies) if ui_latencies else 9.0
+    mean_ui = sum(ui_latencies) / len(ui_latencies) if ui_latencies else 0.0
     mean_rtt = sum(rtts) / len(rtts) if rtts else 40.0
     
     print(f"  [OK] Berhasil merekam {total_received} baris data ke {csv_path.name}")
     print(f"  -> Rata-rata Interval: {mean_intv:.2f} ms")
-    print(f"  -> Rata-rata Latensi UI: {mean_ui:.2f} ms")
+    print(f"  -> Waktu proses pesan (tanpa jendela GUI): {mean_ui:.3f} ms")
     print(f"  -> RTT Rata-rata: {mean_rtt:.2f} ms")
     print(f"  -> Alarm Terpicu: {alarm_count} kali")
     
@@ -118,7 +120,7 @@ def run_batch_test(label, interval_ms, num_packets, aht_mode):
         'interval_ms': round(mean_intv, 1),
         'received': total_received,
         'invalid': total_invalid,
-        'ui_latency_ms': round(mean_ui, 2),
+        'ui_latency_ms': None,
         'rtt_ms': round(mean_rtt, 2),
         'file': csv_path.name,
         'alarm_count': alarm_count
